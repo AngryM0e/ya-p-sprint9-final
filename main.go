@@ -17,11 +17,12 @@ func generateRandomElements(size int) []int {
 	if size == 0 {
 		return make([]int, 0)
 	}
-	//create determenism predictable generator
+	// Create deterministic generator with fixed seed for predictable results
 	rng := rand.New(rand.NewSource(42))
 
 	slice := make([]int, size)
 	for i := 0; i < size; i++ {
+		// Generate numbers in range [0, 1000]
 		slice[i] = rng.Intn(1000)
 	}
 	return slice
@@ -34,7 +35,7 @@ func maximum(data []int) int {
 	}
 
 	max := data[0]
-	//находим максимальное значение
+	// Iterate through slice to find maximum value
 	for i := 0; i < len(data); i++ {
 		if data[i] > max {
 			max = data[i]
@@ -51,49 +52,50 @@ func maxChunks(data []int) int {
 		return 0
 	}
 
-	//Сreate len(8) slice
+	// Pre-allocate slice to store maximums from each chunk
 	maxes := make([]int, CHUNKS)
 	var wg sync.WaitGroup
 
-	//Size every piece
+	// Calculate base chunk size
 	chunkSize := n / CHUNKS
 
 	for i := 0; i < CHUNKS; i++ {
-		//Find first & last indexes
+		// Calculate chunk boundaries
 		start := i * chunkSize
 		end := start + chunkSize
 
-		//Обработка последне чанка (может включать "хвостик")
+		// Last chunk takes all remaining elements
 		if i == CHUNKS-1 {
-			end = n // для последнего чанка берем до конца слайса
+			end = n
 		}
 
-		// Если start >= end, пропускаем пустой чанк
+		// Skip empty chunks that may occur when n < CHUNKS
 		if start >= end {
-			maxes[i] = data[0] // min value
+			maxes[i] = data[0]
 			continue
 		}
 
 		wg.Add(1)
+		// Launch goroutine to process chunk
 		go func(i, start, end int) {
 			defer wg.Done()
 
-			//Находим максимум в своем чанке
+			// Find maximum within the assigned chunk
 			chunkMax := data[start]
 			for j := start + 1; j < end; j++ {
 				if data[j] > chunkMax {
 					chunkMax = data[j]
 				}
 			}
-			//Записываем результат в заранее выделенный слот
+			// Store result in pre-allocated slot
 			maxes[i] = chunkMax
 		}(i, start, end)
 	}
 
-	//Wait goroutins end
+	//Wait for all goroutines to complete
 	wg.Wait()
 
-	//Find overall chunks maximum
+	// Find overall maximim from chunk results
 	overallMax := maxes[0]
 	for i := 1; i < CHUNKS; i++ {
 		if maxes[i] > overallMax {

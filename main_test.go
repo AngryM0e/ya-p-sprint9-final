@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//TestGenerateRandomElements tests the random data generation function
 func TestGenerateRandomElements(t *testing.T) {
 	t.Run("zero size", func(t *testing.T) {
 		result := generateRandomElements(0)
@@ -18,6 +19,7 @@ func TestGenerateRandomElements(t *testing.T) {
 
 		assert.Len(t, result, size, "Should  return slice of correct length")
 
+		// Validate all elements are within expected range [0, 1000]
 		for _, val := range result {
 			assert.GreaterOrEqual(t, val, 0, "Element should be >= 0")
 			assert.Less(t, val, 1000, "Element should be < 1000")
@@ -25,6 +27,7 @@ func TestGenerateRandomElements(t *testing.T) {
 	})
 
 	t.Run("determinism", func(t *testing.T) {
+		// Fixed seed should produce identical results across multiple calls
 		size := 100
 		result1 := generateRandomElements(size)
 		result2 := generateRandomElements(size)
@@ -43,6 +46,7 @@ func TestGenerateRandomElements(t *testing.T) {
 	})
 }
 
+// TestMaximum tests the sequential maximum finding function
 func TestMaximum(t *testing.T) {
 	t.Run("empty slice", func(t *testing.T) {
 		res := maximum([]int{})
@@ -80,6 +84,7 @@ func TestMaximum(t *testing.T) {
 	})
 }
 
+// TestMaxChunks tests the parallel maximum finding function
 func TestMaxChunks(t *testing.T) {
 	t.Run("empty slice", func(t *testing.T) {
 		res := maxChunks([]int{})
@@ -92,6 +97,7 @@ func TestMaxChunks(t *testing.T) {
 	})
 
 	t.Run("less elements than chunks", func(t *testing.T) {
+		// Tests handling when slice has fewer elements than available chunks
 		res := maxChunks([]int{1, 5, 3})
 		assert.Equal(t, 5, res)
 	})
@@ -103,6 +109,7 @@ func TestMaxChunks(t *testing.T) {
 	})
 
 	t.Run("with ending", func(t *testing.T) {
+		// Tests proper handling of remainder elements 
 		input := make([]int, 10)
 		for i := range input {
 			input[i] = i
