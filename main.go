@@ -45,17 +45,16 @@ func maximum(data []int) int {
 
 // maxChunks returns the maximum number of elements in a chunks.
 func maxChunks(data []int) int {
-	n := len(data)
-	if n == 0 {
+	if len(data) == 0 {
 		return 0
 	}
 
 	// Pre-allocate slice to store maximums from each chunk
-	res := make(chan int, CHUNKS)
+	res := make([]int, CHUNKS)
 	var wg sync.WaitGroup
 
 	// Calculate base chunk size
-	chunkSize := n / CHUNKS
+	chunkSize := len(data) / CHUNKS
 
 	for i := 0; i < CHUNKS; i++ {
 		// Calculate chunk boundaries
@@ -64,41 +63,21 @@ func maxChunks(data []int) int {
 
 		// Last chunk takes all remaining elements
 		if i == CHUNKS-1 {
-			end = n
-		}
-
-		// Skip empty chunks that may occur when n < CHUNKS
-		if start >= end {
-			continue
+			end = len(data)
 		}
 
 		wg.Add(1)
 		// Launch goroutine to process chunk
-		go func(chunk []int) {
+		go func(chunkIndex int, chunk []int) {
 			defer wg.Done()
 
-			chunkMax := maximum(chunk)
-
-			// Send result through channel
-			res <- chunkMax
-		}(data[start:end])
+			res[chunkIndex] = maximum(chunk)
+		}(i, data[start:end])
 	}
 
-	// Close channel after all goroutines complete
-	go func() {
-		wg.Wait()
-		close(res)
-	}()
+	wg.Wait()
 
-	// Collect result from channel
-	overallMax := <- res
-	for max := range res {
-		if max > overallMax {
-			overallMax = max
-		}
-	}
-
-	return overallMax
+	return maximum(res)
 }
 
 func main() {

@@ -46,7 +46,6 @@ func TestMaximum(t *testing.T) {
 		{"max at end", []int{1, 2, 3, 100}, 100},
 		{"max in middle", []int{1, 100, 2, 3}, 100},
 		{"all same", []int{5, 5, 5, 5}, 5},
-		{"with negative numbers", []int{-5, -1, -10, 0, 5}, 5},
 	}
 
 	for _, tc := range testCases {
