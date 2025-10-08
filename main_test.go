@@ -6,117 +6,87 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//TestGenerateRandomElements tests the random data generation function
+// TestGenerateRandomElements tests the random data generation function
 func TestGenerateRandomElements(t *testing.T) {
-	t.Run("zero size", func(t *testing.T) {
-		result := generateRandomElements(0)
-		assert.Empty(t, result, "Should return empty slice for size 0")
-	})
+	testCases := []struct {
+		name string
+		size int
+	}{
+		{"zero size", 0},
+		{"small size", 10},
+		{"medium size", 1000},
+		{"large size", 100000},
+	}
 
-	t.Run("small size", func(t *testing.T) {
-		size := 10
-		result := generateRandomElements(size)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := generateRandomElements(tc.size)
 
-		assert.Len(t, result, size, "Should  return slice of correct length")
+			assert.Len(t, res, tc.size, "Should return slice of correct length")
 
-		// Validate all elements are within expected range [0, 1000]
-		for _, val := range result {
-			assert.GreaterOrEqual(t, val, 0, "Element should be >= 0")
-			assert.Less(t, val, 1000, "Element should be < 1000")
-		}
-	})
-
-	t.Run("determinism", func(t *testing.T) {
-		// Fixed seed should produce identical results across multiple calls
-		size := 100
-		result1 := generateRandomElements(size)
-		result2 := generateRandomElements(size)
-
-		assert.Equal(t, result1, result2, "Same seed should produce same results")
-	})
-
-	t.Run("different sizes", func(t *testing.T) {
-		sizes := []int{1, 100, 1000}
-		for _, size := range sizes {
-			t.Run(string(rune(size)), func(t *testing.T) {
-				res := generateRandomElements(size)
-				assert.Len(t, res, size)
-			})
-		}
-	})
+			if tc.size > 0 {
+				for _, val := range res {
+					assert.GreaterOrEqual(t, val, 0, "Element should be positive")
+				}
+			}
+		})
+	}
 }
 
 // TestMaximum tests the sequential maximum finding function
 func TestMaximum(t *testing.T) {
-	t.Run("empty slice", func(t *testing.T) {
-		res := maximum([]int{})
-		assert.Equal(t, 0, res, "Should return 0 for empty slice")
-	})
+	testCases := []struct {
+		name     string
+		input    []int
+		expected int
+	}{
+		{"empty slice", []int{}, 0},
+		{"single element", []int{42}, 42},
+		{"max at beginning", []int{100, 1, 2, 3}, 100},
+		{"max at end", []int{1, 2, 3, 100}, 100},
+		{"max in middle", []int{1, 100, 2, 3}, 100},
+		{"all same", []int{5, 5, 5, 5}, 5},
+		{"with negative numbers", []int{-5, -1, -10, 0, 5}, 5},
+	}
 
-	t.Run("single element", func(t *testing.T) {
-		res := maximum([]int{42})
-		assert.Equal(t, 42, res)
-	})
-
-	t.Run("max at different positions", func(t *testing.T) {
-		testCases := []struct {
-			name     string
-			input    []int
-			expected int
-		}{
-			{"max at beginning", []int{100, 1, 2, 3}, 100},
-			{"max at end", []int{1, 2, 3, 100}, 100},
-			{"max in middle", []int{1, 100, 2, 3}, 100},
-			{"all same", []int{5, 5, 5, 5}, 5},
-		}
-
-		for _, tc := range testCases {
-			t.Run(tc.name, func(t *testing.T) {
-				res := maximum(tc.input)
-				assert.Equal(t, tc.expected, res)
-			})
-		}
-	})
-
-	t.Run("with negative numbers", func(t *testing.T) {
-		res := maximum([]int{-5, -1, -10, 0, 5})
-		assert.Equal(t, 5, res)
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := maximum(tc.input)
+			assert.Equal(t, tc.expected, res)
+		})
+	}
 }
 
 // TestMaxChunks tests the parallel maximum finding function
 func TestMaxChunks(t *testing.T) {
-	t.Run("empty slice", func(t *testing.T) {
-		res := maxChunks([]int{})
-		assert.Equal(t, 0, res, "Should return 0 for empty slice")
-	})
+	withTailElements := make([]int, 10)
+	for i := range withTailElements {
+		withTailElements[i] = i
+	}
+	withTailElements[9] = 100
 
-	t.Run("single element", func(t *testing.T) {
-		res := maxChunks([]int{42})
-		assert.Equal(t, 42, res)
-	})
+	allSameElements := make([]int, 100)
+	for i := range allSameElements {
+		allSameElements[i] = 42
+	}
 
-	t.Run("less elements than chunks", func(t *testing.T) {
-		// Tests handling when slice has fewer elements than available chunks
-		res := maxChunks([]int{1, 5, 3})
-		assert.Equal(t, 5, res)
-	})
+	testCases := []struct {
+		name     string
+		input    []int
+		expected int
+	}{
+		{"empty slice", []int{}, 0},
+		{"single element", []int{42}, 42},
+		{"less elements than chunks", []int{1, 5, 3}, 5},
+		{"exact number of chunks", []int{1, 2, 3, 4, 5, 6, 7, 8}, 8},
+		{"with tail elements", withTailElements, 100},
+		{"all elements same", allSameElements, 42},
+	}
 
-	t.Run("exact number of chunks", func(t *testing.T) {
-		input := []int{1, 2, 3, 4, 5, 6, 7, 8}
-		res := maxChunks(input)
-		assert.Equal(t, 8, res)
-	})
-
-	t.Run("with ending", func(t *testing.T) {
-		// Tests proper handling of remainder elements 
-		input := make([]int, 10)
-		for i := range input {
-			input[i] = i
-		}
-		input[9] = 100
-
-		res := maxChunks(input)
-		assert.Equal(t, 100, res)
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := maxChunks(tc.input)
+			assert.Equal(t, tc.expected, res)
+		})
+	}
 }

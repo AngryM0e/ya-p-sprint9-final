@@ -17,13 +17,11 @@ func generateRandomElements(size int) []int {
 	if size == 0 {
 		return make([]int, 0)
 	}
-	// Create deterministic generator with fixed seed for predictable results
-	rng := rand.New(rand.NewSource(42))
 
 	slice := make([]int, size)
 	for i := 0; i < size; i++ {
-		// Generate numbers in range [0, 1000]
-		slice[i] = rng.Intn(1000)
+		// Generate random positive integers
+		slice[i] = rand.Int()
 	}
 	return slice
 }
@@ -53,7 +51,7 @@ func maxChunks(data []int) int {
 	}
 
 	// Pre-allocate slice to store maximums from each chunk
-	maxes := make([]int, CHUNKS)
+	res := make(chan int, CHUNKS)
 	var wg sync.WaitGroup
 
 	// Calculate base chunk size
@@ -71,35 +69,32 @@ func maxChunks(data []int) int {
 
 		// Skip empty chunks that may occur when n < CHUNKS
 		if start >= end {
-			maxes[i] = data[0]
 			continue
 		}
 
 		wg.Add(1)
 		// Launch goroutine to process chunk
-		go func(i, start, end int) {
+		go func(chunk []int) {
 			defer wg.Done()
 
-			// Find maximum within the assigned chunk
-			chunkMax := data[start]
-			for j := start + 1; j < end; j++ {
-				if data[j] > chunkMax {
-					chunkMax = data[j]
-				}
-			}
-			// Store result in pre-allocated slot
-			maxes[i] = chunkMax
-		}(i, start, end)
+			chunkMax := maximum(chunk)
+
+			// Send result through channel
+			res <- chunkMax
+		}(data[start:end])
 	}
 
-	//Wait for all goroutines to complete
-	wg.Wait()
+	// Close channel after all goroutines complete
+	go func() {
+		wg.Wait()
+		close(res)
+	}()
 
-	// Find overall maximim from chunk results
-	overallMax := maxes[0]
-	for i := 1; i < CHUNKS; i++ {
-		if maxes[i] > overallMax {
-			overallMax = maxes[i]
+	// Collect result from channel
+	overallMax := <- res
+	for max := range res {
+		if max > overallMax {
+			overallMax = max
 		}
 	}
 
